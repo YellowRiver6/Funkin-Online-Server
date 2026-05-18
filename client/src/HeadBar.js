@@ -75,6 +75,7 @@ function HeadBar() {
                     !topTab ? <>
                         <a className='TabButton' href="/network">NETWORK</a>
                         <a className='TabButton' href="/stats">STATS</a>
+                            <a className='TabButton' href="/mods">MODS</a>
                         <a className='TabButton' href="/search">SEARCH</a>
                         <a className='TabButton' href="##" onClick={() => {
                             setTopTab(true);

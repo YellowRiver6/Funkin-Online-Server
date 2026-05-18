@@ -2,7 +2,6 @@ import { Application, Express } from 'express';
 import { UploadedFile } from 'express-fileupload';
 import { getClub, getPlayerByID, getPlayerNameByID, getClubRank, getClubBanner, checkAccess, getIDToken, getPlayerClub, createClub, requestJoinClub, acceptJoinClub, getPlayerIDByName, removePlayerFromClub, promoteClubMember, demoteClubMember, uploadClubBanner, postClubEdit, getUserStats, hasAccess, authPlayer, rejectJoinClub } from '../database';
 import { CooldownTime, setCooldown } from '../../cooldown';
-import { Image } from 'canvas';
 
 export class ClubRoute {
     static init(app: Application) {
@@ -243,58 +242,58 @@ export class ClubRoute {
             }
         });
 
-        setCooldown("/api/club/banner", 10);
-        app.post("/api/club/banner", checkAccess, async (req, res) => {
-            try {
-                const [id, _] = getIDToken(req);
-
-                if (!req.query.tag) {
-                    throw { error_message: 'Invalid Request!' }
-                }
-
-                const club = await getClub(req.query.tag as string);
-                const canForceEdit = hasAccess(await authPlayer(req), 'admin.club.edit');
-
-                if (!canForceEdit && !club.leaders.includes(id)) {
-                    throw { error_message: 'Only club leaders can do that!' }
-                }
-
-                const file = req.files.file as UploadedFile;
-                if (file.size > 1024 * 350) {
-                    return res.sendStatus(413);
-                }
-
-                if (file.mimetype != 'image/png' && file.mimetype != 'image/jpeg' && file.mimetype != 'image/gif') {
-                    return res.sendStatus(415);
-                }
-
-                const img = new Image();
-                img.onload = async function () {
-                    if (img.width != 256 && img.height != 128) {
-                        return res.status(400).json({
-                            error: 'Image must be in size of 256x128!'
-                        });
-                    }
-
-                    if (!await uploadClubBanner(club.tag, file.data)) {
-                        return res.sendStatus(500);
-                    }
-                    res.sendStatus(200);
-                }
-                img.onerror = async function () {
-                    res.status(500).json({
-                        error: 'Server failed to read the image.'
-                    });
-                }
-                img.src = "data:" + file.mimetype + ";base64," + file.data.toString("base64");
-            }
-            catch (exc: any) {
-                console.error(exc);
-                res.status(400).json({
-                    error: exc.error_message ?? "Couldn't upload..."
-                });
-            }
-        });
+        // setCooldown("/api/club/banner", 10);
+        // app.post("/api/club/banner", checkAccess, async (req, res) => {
+        //     try {
+        //         const [id, _] = getIDToken(req);
+        //
+        //         if (!req.query.tag) {
+        //             throw { error_message: 'Invalid Request!' }
+        //         }
+        //
+        //         const club = await getClub(req.query.tag as string);
+        //         const canForceEdit = hasAccess(await authPlayer(req), 'admin.club.edit');
+        //
+        //         if (!canForceEdit && !club.leaders.includes(id)) {
+        //             throw { error_message: 'Only club leaders can do that!' }
+        //         }
+        //
+        //         const file = req.files.file as UploadedFile;
+        //         if (file.size > 1024 * 350) {
+        //             return res.sendStatus(413);
+        //         }
+        //
+        //         if (file.mimetype != 'image/png' && file.mimetype != 'image/jpeg' && file.mimetype != 'image/gif') {
+        //             return res.sendStatus(415);
+        //         }
+        //
+        //         const img = new Image();
+        //         img.onload = async function () {
+        //             if (img.width != 256 && img.height != 128) {
+        //                 return res.status(400).json({
+        //                     error: 'Image must be in size of 256x128!'
+        //                 });
+        //             }
+        //
+        //             if (!await uploadClubBanner(club.tag, file.data)) {
+        //                 return res.sendStatus(500);
+        //             }
+        //             res.sendStatus(200);
+        //         }
+        //         img.onerror = async function () {
+        //             res.status(500).json({
+        //                 error: 'Server failed to read the image.'
+        //             });
+        //         }
+        //         img.src = "data:" + file.mimetype + ";base64," + file.data.toString("base64");
+        //     }
+        //     catch (exc: any) {
+        //         console.error(exc);
+        //         res.status(400).json({
+        //             error: exc.error_message ?? "Couldn't upload..."
+        //         });
+        //     }
+        // });
 
         setCooldown("/api/club/edit", 5);
         setCooldown("club.edit.tag", CooldownTime.DAY * 7);

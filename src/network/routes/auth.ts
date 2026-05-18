@@ -2,6 +2,7 @@ import { Application, Express } from 'express';
 import { validateEmail, getPlayerByEmail, createUser, genAccessToken, getPlayerNameByID } from '../database';
 import { emailCodes, generateCode, sendCodeMail, tempSetCode } from '../email';
 import { cooldownReq, CooldownTime, setCooldown } from '../../cooldown';
+import { isEmailInWhitelist } from "../../whitelist";
 
 export class AuthRoute {
     static init(app: Application) {
@@ -16,6 +17,10 @@ export class AuthRoute {
 
                 if (!validateEmail(req.body.email)) {
                     throw { error_message: 'This Email Host is Blocked!' }
+                }
+
+                if (!isEmailInWhitelist(req.body.email as string)) {
+                    throw { error_message: 'Email is Not in the Whitelist!' }
                 }
 
                 const player = await getPlayerByEmail(req.body.email);

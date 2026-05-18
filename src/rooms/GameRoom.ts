@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { filterChatMessage, filterUsername, formatLog, getRequestIP, removeFromArray } from "../util";
 import { Data } from "../data";
 import { cooldown, cooldownLeft } from "../cooldown";
+import {setSkinLimited, setSongLimited} from "../modlimit";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -88,7 +89,11 @@ export class GameRoom extends Room {
         if (process.env.DEBUG == "true")
             console.log("new room created: " + this.roomId);
 
-        this.state.networkOnly = options.networkOnly;
+        // this.state.networkOnly = options.networkOnly;
+        this.state.networkOnly = true
+        this.state.allPlayersChoose = true
+        this.state.isPrivate = false
+        await this.setPrivate(this.state.isPrivate)
 
         await this.setMetadata({ name: options.name, networkOnly: this.state.networkOnly });
         this.updateRoomMetaClients();
@@ -107,27 +112,28 @@ export class GameRoom extends Room {
 
         this.onMessage("toggleNetworkOnly", async (client) => {
             this.keepAliveClient(client);
-
-            const requester = this.getStatePlayer(client);
-            if (!requester)
-                return;
-
-            if (this.hasPerms(client)) {
-                if (!requester.verified) {
-                    client.send('alert', 'You\'re not logged in!')
-                    return;
-                }
-                for (const [clSID, player] of this.state.players) {
-                    if (!player.verified) {
-                        await this.removePlayer(this.clients.getById(clSID));
-                        return;
-                    }
-                }
-                this.state.networkOnly = !this.state.networkOnly;
-            }
-            else {
-                client.send('alert', 'You don\'t have a permission to do that.')
-            }
+            client.send('alert', 'You can\'t do this on this server.')
+            //
+            // const requester = this.getStatePlayer(client);
+            // if (!requester)
+            //     return;
+            //
+            // if (this.hasPerms(client)) {
+            //     if (!requester.verified) {
+            //         client.send('alert', 'You\'re not logged in!')
+            //         return;
+            //     }
+            //     for (const [clSID, player] of this.state.players) {
+            //         if (!player.verified) {
+            //             await this.removePlayer(this.clients.getById(clSID));
+            //             return;
+            //         }
+            //     }
+            //     this.state.networkOnly = !this.state.networkOnly;
+            // }
+            // else {
+            //     client.send('alert', 'You don\'t have a permission to do that.')
+            // }
         });
 
         this.onMessage("startGame", async (client) => {
@@ -207,13 +213,17 @@ export class GameRoom extends Room {
             if (this.checkInvalid(message, VerifyTypes.ARRAY, 6)) return;
 
             if (this.hasPerms(client) || this.state.allPlayersChoose) {
-                this.state.folder = message[0];
-                this.state.song = message[1];
-                this.state.diff = message[2];
-                this.chartHash = message[3];
-                this.state.modDir = message[4];
-                this.state.modURL = message[5];
-                this.state.diffList = message[6];
+                // this.state.folder = message[0];
+                // this.state.song = message[1];
+                // this.state.diff = message[2];
+                // this.chartHash = message[3];
+                // this.state.modDir = message[4];
+                // this.state.modURL = message[5];
+                // this.state.diffList = message[6];
+                if (!setSongLimited(this, message)) {
+                    client.send('alert', 'Please download this mod from our website.');
+                    return;
+                }
 
                 for (const [sid, player] of this.state.players) {
                     player.isReady = false;
@@ -240,7 +250,8 @@ export class GameRoom extends Room {
             if (this.hasPerms(client) || this.state.allPlayersChoose) {
                 this.state.stageName = message[0];
                 this.state.stageMod = message[1];
-                this.state.stageURL = message[2];
+                // this.state.stageURL = message[2];
+                this.state.stageURL = null;
 
                 for (const [_, player] of this.state.players) {
                     player.isReady = false;
@@ -632,8 +643,11 @@ export class GameRoom extends Room {
                 return;
             }
 
-            this.setPlayerSkin(this.getStatePlayer(client), message[0]);
-            this.getStatePlayer(client).skinURL = message[1];
+            // this.setPlayerSkin(this.getStatePlayer(client), message[0]);
+            // this.getStatePlayer(client).skinURL = message[1];
+            if (!setSkinLimited(this, this.getStatePlayer(client), message[0])) {
+                client.send('alert', 'Please download this skin pack from our website.');
+            }
         });
 
         this.onMessage("updateFP", async (client, message) => {
@@ -702,7 +716,8 @@ export class GameRoom extends Room {
 
             requester.noteSkin = message[0];
             requester.noteSkinMod = message[1];
-            requester.noteSkinURL = message[2];
+            // requester.noteSkinURL = message[2];
+            requester.noteSkinURL = null
         });
 
         this.onMessage("command", async (client, message) => {
@@ -1017,8 +1032,12 @@ export class GameRoom extends Room {
         // }
         requester.name = playerName;
         if (!this.state.disableSkins) {
-            this.setPlayerSkin(requester, options.skin);
-            requester.skinURL = options.skinURL;
+            // this.setPlayerSkin(requester, options.skin);
+            // requester.skinURL = options.skinURL;
+            if (!setSkinLimited(this, requester, options.skin)) {
+                this.setPlayerSkin(requester, null);
+                requester.skinURL = null;
+            }
         }
         this.setPlayerPoints(requester, playerPoints);
         requester.verified = isVerified;
@@ -1026,7 +1045,8 @@ export class GameRoom extends Room {
         this.updateArrowColors(requester, options.arrowRGB);
         requester.noteSkin = options.noteSkin;
         requester.noteSkinMod = options.noteSkinMod;
-        requester.noteSkinURL = options.noteSkinURL;
+        // requester.noteSkinURL = options.noteSkinURL;
+        requester.noteSkinURL = null;
 
         const sideCount = [0, 0];
         for (const [_, player] of this.state.players) {

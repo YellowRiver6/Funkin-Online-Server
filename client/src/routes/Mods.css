@@ -1,0 +1,276 @@
+.mods-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    color: #fff;
+    font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.mods-header {
+    text-align: center;
+    padding: 30px 0 20px;
+}
+
+.mods-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #a981ff 0%, #e0c3ff 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+}
+
+.mods-header p {
+    color: #888;
+    font-size: 0.95rem;
+}
+
+.mods-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.mods-tabs button {
+    flex: 1;
+    padding: 12px;
+    background: #1e1d1e;
+    border: 2px solid #333;
+    border-radius: 12px;
+    color: #888;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.mods-tabs button:hover {
+    border-color: #a981ff;
+    color: #fff;
+}
+
+.mods-tabs button.active {
+    background: linear-gradient(135deg, #a981ff 0%, #8b5cf6 100%);
+    border-color: #a981ff;
+    color: #fff;
+}
+
+.mods-search-box {
+    position: relative;
+    margin: 20px 0 30px;
+}
+
+.mods-search-input {
+    width: 100%;
+    padding: 16px 50px 16px 20px;
+    font-size: 1.05rem;
+    border: 2px solid #333;
+    border-radius: 16px;
+    background: #1e1d1e;
+    color: #fff;
+    outline: none;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.mods-search-input::placeholder {
+    color: #666;
+}
+
+.mods-search-input:focus {
+    border-color: #a981ff;
+    background: #252425;
+    box-shadow: 0 0 20px rgba(169, 129, 255, 0.15);
+}
+
+.mods-search-icon {
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+    font-size: 1.2rem;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.mods-stats {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 5px 15px;
+    color: #888;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #2a2a2a;
+    margin-bottom: 15px;
+}
+
+.mods-stats span {
+    color: #a981ff;
+    font-weight: 500;
+}
+
+.mods-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mod-card {
+    background: #1e1d1e;
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.mod-card:hover {
+    border-color: #a981ff;
+    background: #252425;
+    transform: translateX(4px);
+}
+
+.mod-card.no-link {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.mod-card.no-link:hover {
+    border-color: #2a2a2a;
+    transform: none;
+    background: #1e1d1e;
+}
+
+.mod-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mod-name {
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mod-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.mod-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #a981ff 0%, #8b5cf6 100%);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.mod-download-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(169, 129, 255, 0.4);
+}
+
+.mod-no-link {
+    padding: 6px 12px;
+    background: #2a2a2a;
+    color: #666;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.mods-highlight {
+    background: rgba(169, 129, 255, 0.3);
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+.mods-empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: #666;
+}
+
+.mods-empty svg {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.mods-loading {
+    text-align: center;
+    padding: 80px 20px;
+    color: #888;
+}
+
+.mods-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #333;
+    border-top-color: #a981ff;
+    border-radius: 50%;
+    animation: mods-spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes mods-spin {
+    to { transform: rotate(360deg); }
+}
+
+.mods-error {
+    text-align: center;
+    padding: 60px 20px;
+    color: #ff6b6b;
+}
+
+.mods-error button {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: #a981ff;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: inherit;
+}
+
+.mods-error button:hover {
+    background: #8b5cf6;
+}
+
+@media (max-width: 600px) {
+    .mods-header h1 {
+        font-size: 1.6rem;
+    }
+    .mod-card {
+        padding: 14px;
+    }
+    .mod-name {
+        font-size: 0.95rem;
+    }
+    .mod-download-btn {
+        padding: 7px 12px;
+        font-size: 0.8rem;
+    }
+}

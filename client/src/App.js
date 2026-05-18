@@ -17,6 +17,7 @@ import TopClubs from './routes/TopClubs';
 import Notifications from './routes/Notifications';
 import Admin from './routes/Admin';
 import Rules from './routes/Rules';
+import Mods from "./routes/Mods";
 
 const App = () => {
   return (
@@ -25,6 +26,7 @@ const App = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/user/:name" element={<User />} />
+        <Route path="/mods" element={<Mods />} />
         <Route path="/player/:name" element={<User />} />
         <Route path="/song/:song" element={<Song />} />
         <Route path="/network" element={<Network />} />

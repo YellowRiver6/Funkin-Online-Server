@@ -7,6 +7,8 @@ import { Data } from "./data";
 import ip from 'ip';
 import { saveAndCleanCooldownData, setCooldown } from "./cooldown";
 import { Encoder } from "@colyseus/schema";
+import { initializeWhitelist } from "./whitelist";
+import { reloadCache } from "./modlimit";
 
 export class ServerInstance {
     static async init() {
@@ -40,6 +42,18 @@ export class ServerInstance {
             if (process.env["DATABASE_URL"]) {
                 await initDatabaseCache();
             }
+
+            if (process.env["WHITE_LIST"]) {
+                await initializeWhitelist()
+            }
+
+            process.on('SIGTERM', function () {
+                void saveAndCleanCooldownData();
+                console.log('Saved cooldown data!');
+            });
+
+            reloadCache();
+            setInterval(reloadCache, 1000 * 60);
         
             // if (process.env["GRANT_MODS"]) {
             //     for (const id of process.env["GRANT_MODS"].split(" ")) {

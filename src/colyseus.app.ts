@@ -1,4 +1,4 @@
-import { defineServer, defineRoom, matchMaker } from "colyseus";
+import {defineServer, defineRoom, matchMaker, WebSocketTransport} from "colyseus";
 
 //import { monitor } from "@colyseus/monitor";
 //import { playground } from "@colyseus/playground";
@@ -7,9 +7,10 @@ import { initExpress } from "./site";
 import { GameRoom } from "./rooms/GameRoom";
 import { NetworkRoom } from "./rooms/NetworkRoom";
 import { setCooldown } from "./cooldown";
+import { BunWebSockets } from "@colyseus/bun-websockets";
 
 function registerRooms() {
-    let rooms = {
+    const rooms = {
         room: defineRoom(GameRoom)
     };
     if (process.env["NETWORK_ENABLED"] == "true") {
@@ -17,6 +18,7 @@ function registerRooms() {
     }
     return rooms;
 }
+
 
 export default defineServer({
     rooms: registerRooms(),
@@ -31,4 +33,12 @@ export default defineServer({
             await matchMaker.createRoom("network", {});
         }
     },
+    transport: new BunWebSockets({
+        options: {
+            maxPayloadLength: 1024 * 1024,
+        }
+    }),
+    // transport: new WebSocketTransport({
+    //     maxPayload: 1024 * 1024,
+    // })
 });

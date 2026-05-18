@@ -331,7 +331,7 @@ export class AccountRoute {
                     return;
                 }
 
-                await deleteNotification(req.params.id);
+                // await deleteNotification(req.params.id);
                 res.sendStatus(200);
             }
             catch (exc) {

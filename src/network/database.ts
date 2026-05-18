@@ -262,6 +262,16 @@ export async function submitScore(submitterID: string, replay: ReplayData) {
             }
         });
 
+        if (replay.points > 100) {
+            replay.points = 10;
+        }
+        else if (replay.points <= 100 && replay.points > 0) {
+            replay.points = Math.ceil(replay.points / 10);
+        }
+        else {
+            replay.points = 0;
+        }
+
         const score = await prisma.score.create({
             data: {
                 accuracy: replay.accuracy,

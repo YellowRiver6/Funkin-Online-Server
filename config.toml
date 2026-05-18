@@ -1,8 +1,6 @@
 # loosely based on luckperms (i love lp smm <33333)
 
-[[users]]
-name = "Snirozu"
-role = "Admin"
+users = []
 
 [[roles]]
 # basically a root user

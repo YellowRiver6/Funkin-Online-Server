@@ -20,11 +20,11 @@ export const emailCodeTimers: Map<string, NodeJS.Timeout> = new Map<string, Node
 export async function sendCodeMail(email: string, code: string) {
     try {
         await transMail.sendMail({
-            from: 'Psych Online <' + process.env.SMTP_MAIL + '>',
-            to: email,
-            subject: code + ' is your Verification Code',
-            html: '<h3>Your verification code is:<h3><h1>' + code + '</h1>',
-        }
+                from: "psych-online@qq.com",
+                to: email,
+                subject: code + ' 是您的验证码',
+                html: '<h3>您的验证码是:<h3><h1>' + code + '</h1>',
+            }
             // ,    (error, info) => {
             //         if (res)
             //             if (error)

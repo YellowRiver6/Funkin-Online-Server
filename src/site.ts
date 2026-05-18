@@ -23,12 +23,21 @@ import { Data } from './data';
 import sanitizeHtml from 'sanitize-html';
 import { AuthRoute } from './network/routes/auth';
 import { cooldownRequest } from './cooldown';
+import { getModList, getSkinList } from "./modlimit";
 
 export async function initExpress(app: Application) {
     // set this to true if you use a proxy like nginx
     app.set('trust proxy', process.env['EXPRESS_TRUST_PROXY'] == "true");
 
-    app.get("/rooms/:roomName?", async (_req, res) => {
+    app.get("/api/mods", async (_req: Request, res: Response) => {
+        res.send(getModList())
+    })
+    app.get("/api/skins", async (_req: Request, res: Response) => {
+        res.send(getSkinList())
+    })
+
+    // app.get("/rooms/:roomName?", async (_req, res) => {
+    app.get("/rooms/:roomName", async (_req, res) => {
         const rooms = await matchMaker.query({
             name: 'room',
             locked: false,
@@ -85,7 +94,7 @@ export async function initExpress(app: Application) {
 
         app.use(cors({ origin: true, credentials: true, }));
         app.use(express.json({
-            limit: '1mb'
+            limit: '10mb'
         }));
         app.use(fileUpload({}));
         app.use(cookieParser());
@@ -208,7 +217,8 @@ export async function initExpress(app: Application) {
 
     app.get('/', showIndex);
     app.use(express.static('client/build/'));
-    app.get('/*', showIndex);
+    // app.get('/*', showIndex);
+    app.use(showIndex);
 }
 
 export const moneyFormatter = new Intl.NumberFormat();
