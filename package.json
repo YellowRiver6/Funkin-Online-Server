@@ -8,6 +8,7 @@
         "node": ">=22.0.0"
     },
     "scripts": {
+        "compile": "bun build src/index.ts --compile --outfile funkin --minify --sourcemap",
         "test": "nodemon src/index.ts",
         "start": "npm run build && pm2 start ecosystem.config.js",
         "startnode": "npm run build && node build/index.js",
@@ -49,7 +50,6 @@
         "typescript-eslint": "^8.59.3"
     },
     "dependencies": {
-        "@colyseus/bun-websockets": "^0.17.13",
         "@colyseus/core": "^0.17.43",
         "@colyseus/tools": "^0.17.19",
         "@colyseus/ws-transport": "^0.17.13",
@@ -71,9 +71,11 @@
         "javascript-time-ago": "^2.6.4",
         "jsonwebtoken": "^9.0.3",
         "micromatch": "^4.0.8",
+        "node-napcat-ts": "^0.4.25",
         "nodemailer": "^6.10.1",
         "path-to-regexp": "^8.4.2",
         "sanitize-html": "^2.17.4",
+        "string-argv": "^0.3.2",
         "toml": "^3.0.0",
         "ws": "^8.20.1"
     }

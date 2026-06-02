@@ -21,6 +21,8 @@ interface JsonUrlList {
     mods: JsonUrl[];
 }
 
+export const playerInPubRoom: Map<string, Set<string>> = new Map();
+
 // 使用闭包和立即执行函数模拟 LazyLock
 const modCache = (() => {
     let cache: Record<string, FinalJson> | null = null;
@@ -152,6 +154,30 @@ export function findModUrl(name: string | null | undefined, chart: string | null
     return '';
 }
 
+// 只通过曲谱名, 不使用模组名进行查找
+export function findChartUrl(chart: string | null | undefined, hash:string): string {
+    const safeChart = chart || '';
+    for (const v of Object.values(modCache.get())) {
+        for (const [c, h] of Object.entries(v.charts)) {
+            if (c === safeChart && h === hash) {
+                return v.url
+            }
+        }
+    }
+    return '';
+}
+
+export function findChartUrlByHash(hash:string): string {
+    for (const v of Object.values(modCache.get())) {
+        for (const [_, h] of Object.entries(v.charts)) {
+            if (h === hash) {
+                return v.url
+            }
+        }
+    }
+    return '';
+}
+
 export function findSkinUrl(name: string | null | undefined, skin: string | null | undefined): string {
     const safeName = name || '';
     const safeSkin = skin || '';
@@ -161,6 +187,11 @@ export function findSkinUrl(name: string | null | undefined, skin: string | null
         const md = m[safeName];
         if (md && md.skins.some(s => s === safeSkin)) {
             return md.url;
+        }
+        const c = modCache.get();
+        const cd = c[safeName];
+        if ( c && cd.skins.some(s => s === safeSkin)) {
+            return cd.url;
         }
     } catch (_) {
         // 出现异常时返回空字符串
@@ -194,14 +225,14 @@ function readJson(filePath: string): FinalJson | null {
     }
 }
 
-function isVanillaChart(chart: string | null | undefined): boolean {
+export function isVanillaChart(chart: string | null | undefined): boolean {
     if (!chart) {
         return false;
     }
     return VANILLA_CHARTS.includes(chart);
 }
 
-function isVanillaSkin(skin: string | null | undefined): boolean {
+export function isVanillaSkin(skin: string | null | undefined): boolean {
     if (!skin) {
         return false;
     }
@@ -215,7 +246,7 @@ export function setSongLimited(room: GameRoom, message: any, level: number = 1):
     if (level > 2 || level < 0) {
         return false;
     }
-    if (!message[5] && message[4]) {
+    if (!message[5] && message[4] && level != 0) {
         return false;
     }
     let url: string = findModUrl(message[4], message[1], message[3]);

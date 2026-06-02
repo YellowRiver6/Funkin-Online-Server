@@ -139,13 +139,13 @@ function renderRooms(rooms) {
         )
     }
 
-    if (render.length < 1) {
-        render.push(
-            <div>
-                <iframe title=":(" src="https://www.youtube.com/embed/v4YHIYXao9I?autoplay=1" width="560" height="315" frameborder="0" allowfullscreen></iframe> <br/>
-            </div>
-        )
-    }
+    // if (render.length < 1) {
+    //     render.push(
+    //         <div>
+    //             <iframe title=":(" src="https://www.youtube.com/embed/v4YHIYXao9I?autoplay=1" width="560" height="315" frameborder="0" allowfullscreen></iframe> <br/>
+    //         </div>
+    //     )
+    // }
 
     return render;
 }

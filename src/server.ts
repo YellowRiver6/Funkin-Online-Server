@@ -9,6 +9,7 @@ import { saveAndCleanCooldownData, setCooldown } from "./cooldown";
 import { Encoder } from "@colyseus/schema";
 import { initializeWhitelist } from "./whitelist";
 import { reloadCache } from "./modlimit";
+import {initNapCatBot} from "./bot";
 
 export class ServerInstance {
     static async init() {
@@ -54,7 +55,10 @@ export class ServerInstance {
 
             reloadCache();
             setInterval(reloadCache, 1000 * 60);
-        
+
+            if (process.env["NAPCAT_BOT"]) {
+                initNapCatBot();
+            }
             // if (process.env["GRANT_MODS"]) {
             //     for (const id of process.env["GRANT_MODS"].split(" ")) {
             //         try {

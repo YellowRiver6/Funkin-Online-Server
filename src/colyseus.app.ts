@@ -7,7 +7,7 @@ import { initExpress } from "./site";
 import { GameRoom } from "./rooms/GameRoom";
 import { NetworkRoom } from "./rooms/NetworkRoom";
 import { setCooldown } from "./cooldown";
-import { BunWebSockets } from "@colyseus/bun-websockets";
+// import { BunWebSockets } from "@colyseus/bun-websockets";
 
 function registerRooms() {
     const rooms = {
@@ -33,12 +33,12 @@ export default defineServer({
             await matchMaker.createRoom("network", {});
         }
     },
-    transport: new BunWebSockets({
-        options: {
-            maxPayloadLength: 1024 * 1024,
-        }
-    }),
-    // transport: new WebSocketTransport({
-    //     maxPayload: 1024 * 1024,
-    // })
+    // transport: new BunWebSockets({
+    //     options: {
+    //         maxPayloadLength: 1024 * 1024 * 1024 * 10,
+    //     }
+    // }),
+    transport: new WebSocketTransport({
+        maxPayload: 1024 * 1024 * 250,
+    })
 });

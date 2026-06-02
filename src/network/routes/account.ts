@@ -275,34 +275,37 @@ export class AccountRoute {
             }
         });
 
-        app.all("/api/account/delete", checkAccess, async (req, res) => {
-            try {
-                const [id] = getIDToken(req);
-                const player = await getPlayerByID(id);
-
-                if (req.query.code) {
-                    if (req.query.code != emailCodes.get(player.email)) {
-                        emailCodes.delete(player.email);
-                        throw { error_message: 'Invalid Code!' }
-                    }
-
-                    emailCodes.delete(player.email);
-                    await deleteUser(player.id);
-                    res.sendStatus(200);
-                }
-                else {
-                    const daCode = generateCode();
-                    tempSetCode(player.email, daCode);
-                    await sendCodeMail(player.email, daCode);
-                    res.sendStatus(200);
-                }
-            }
-            catch (exc) {
-                console.error(exc);
-                res.status(400).json({
-                    error: exc.error_message ?? "Couldn't delete your account..."
-                });
-            }
+        app.all("/api/account/delete", checkAccess, async (_req, res) => {
+            res.status(400).json({
+                error: "Delete an account is not supported!"
+            });
+            // try {
+            //     const [id] = getIDToken(req);
+            //     const player = await getPlayerByID(id);
+            //
+            //     if (req.query.code) {
+            //         if (req.query.code != emailCodes.get(player.email)) {
+            //             emailCodes.delete(player.email);
+            //             throw { error_message: 'Invalid Code!' }
+            //         }
+            //
+            //         emailCodes.delete(player.email);
+            //         await deleteUser(player.id);
+            //         res.sendStatus(200);
+            //     }
+            //     else {
+            //         const daCode = generateCode();
+            //         tempSetCode(player.email, daCode);
+            //         await sendCodeMail(player.email, daCode);
+            //         res.sendStatus(200);
+            //     }
+            // }
+            // catch (exc) {
+            //     console.error(exc);
+            //     res.status(400).json({
+            //         error: exc.error_message ?? "Couldn't delete your account..."
+            //     });
+            // }
         });
 
         app.get("/api/account/notifications", checkAccess, async (req, res) => {

@@ -2,12 +2,12 @@ import { Room, Client, AuthContext, CloseCode } from "@colyseus/core";
 import { RoomState } from "./schema/RoomState";
 import { ColorArray, Person, Player } from "./schema/Player";
 import { ServerError } from "colyseus";
-import { getPlayerByID, getUserStats, hasAccess, submitReport } from "../network/database";
+import {getPlayerByID, getPlayerByName, getUserStats, hasAccess, submitReport} from "../network/database";
 import jwt from "jsonwebtoken";
 import { filterChatMessage, filterUsername, formatLog, getRequestIP, removeFromArray } from "../util";
 import { Data } from "../data";
 import { cooldown, cooldownLeft } from "../cooldown";
-import {setSkinLimited, setSongLimited} from "../modlimit";
+import {playerInPubRoom, setSkinLimited, setSongLimited} from "../modlimit";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -79,6 +79,9 @@ export class GameRoom extends Room {
      * used only for chat reporting
      */
     loggedMessages: ChatMessageDetails[] = [];
+
+    // mod限制等级
+    modLimitLevel: number = Number.parseInt(process.env.MOD_LIMIT_LEVEL) || 1;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async onCreate(options: any) {
@@ -220,8 +223,8 @@ export class GameRoom extends Room {
                 // this.state.modDir = message[4];
                 // this.state.modURL = message[5];
                 // this.state.diffList = message[6];
-                if (!setSongLimited(this, message)) {
-                    client.send('alert', 'Please download this mod from our website.');
+                if (!setSongLimited(this, message, this.modLimitLevel)) {
+                    client.send('alert', 'Please download this mod from our website. 请从服务器网站下载联机用的模组');
                     return;
                 }
 
@@ -238,7 +241,7 @@ export class GameRoom extends Room {
                 this.broadcast("checkChart", "", { afterNextPatch: true });
             }
             else {
-                client.send('alert', 'You don\'t have a permission to do that.')
+                client.send('alert', 'You don\'t have a permission to do that. 您无选歌权限')
             }
         });
 
@@ -645,8 +648,8 @@ export class GameRoom extends Room {
 
             // this.setPlayerSkin(this.getStatePlayer(client), message[0]);
             // this.getStatePlayer(client).skinURL = message[1];
-            if (!setSkinLimited(this, this.getStatePlayer(client), message[0])) {
-                client.send('alert', 'Please download this skin pack from our website.');
+            if (!setSkinLimited(this, this.getStatePlayer(client), message[0], this.modLimitLevel)) {
+                client.send('alert', 'Please download this skin pack from our website. 请从服务器网站下载联机用的皮肤包');
             }
         });
 
@@ -811,6 +814,16 @@ export class GameRoom extends Room {
                 case "help":
                     client.send("log", formatLog("> Global Commands: /roll, /kick <name>, /report"));
                     break;
+                case "limit":
+                    const level = Number(message[1]);
+                    if  ((await getPlayerByName(requester.name)).role != "Admin") {
+                        client.send("log", "Admin only.");
+                    }
+                    if (level || level === 0) {
+                        this.modLimitLevel = level;
+                        client.send("log", "Mod limit level in this room is " + level + " now.");
+                    }
+                    break;
                 default:
                     client.send("log", formatLog("> Unknown command; try /help to see the command list!"));
                     break;
@@ -899,7 +912,7 @@ export class GameRoom extends Room {
             throw new ServerError(5004, "Username contains invalid characters!");
         }
         else if (latestVersion != options.protocol) {
-            throw new ServerError(5003, "This client version is not supported on this server!\n\nYour protocol version: '" + options.protocol + "' latest: '" + latestVersion + "'");
+            throw new ServerError(5003, "版本过低! This client version is not supported on this server!\n\nYour protocol version: '" + options.protocol + "' latest: '" + latestVersion + "'");
         }
         else if (options.name.length > 14) {
             throw new ServerError(5001, "Too long name!");
@@ -909,24 +922,24 @@ export class GameRoom extends Room {
             throw new ServerError(5002, "Can't join/create 4 servers on the same IP!");
         }
 
-        const playerIp = getRequestIP(context);
-        try {
-            const ipInfo = await (await fetch("http://ip-api.com/json/" + encodeURIComponent(playerIp))).json();
-            if (process.env["NETWORK_ENABLED"] == "true" && ipInfo.country) {
-                if (!Data.INFO.COUNTRY_PLAYERS.hasOwnProperty(ipInfo.country))
-                    Data.INFO.COUNTRY_PLAYERS[ipInfo.country] = [];
-
-                if (!Data.INFO.COUNTRY_PLAYERS[ipInfo.country].includes(playerIp))
-                    Data.INFO.COUNTRY_PLAYERS[ipInfo.country].push(playerIp);
-            }
-        }
-        catch (exc) {
-            console.log(playerIp);
-            console.error(exc);
-        }
+        // const playerIp = getRequestIP(context);
+        // try {
+        //     const ipInfo = await (await fetch("http://ip-api.com/json/" + encodeURIComponent(playerIp))).json();
+        //     if (process.env["NETWORK_ENABLED"] == "true" && ipInfo.country) {
+        //         if (!Data.INFO.COUNTRY_PLAYERS.hasOwnProperty(ipInfo.country))
+        //             Data.INFO.COUNTRY_PLAYERS[ipInfo.country] = [];
+        //
+        //         if (!Data.INFO.COUNTRY_PLAYERS[ipInfo.country].includes(playerIp))
+        //             Data.INFO.COUNTRY_PLAYERS[ipInfo.country].push(playerIp);
+        //     }
+        // }
+        // catch (exc) {
+        //     console.log(playerIp);
+        //     console.error(exc);
+        // }
 
         this.clientsInfo.set(client.sessionId, new ClientInfo());
-        this.clientsInfo.get(client.sessionId).ip = playerIp;
+        // this.clientsInfo.get(client.sessionId).ip = playerIp;
 
         return true;
     }
@@ -957,7 +970,7 @@ export class GameRoom extends Room {
             // await does work here, for some reason typescript counts it as "no effect"?
             await jwt.verify(options.networkToken, player.secret as string, async (err: any, _user: any) => {
                 if (err) {
-                    client.error(401, "Couldn't authorize to the network!");
+                    client.error(401, "Couldn't authorize to the network! 登录失败");
                     await this.removePlayer(client);
                     return;
                 }
@@ -972,9 +985,16 @@ export class GameRoom extends Room {
         }
 
         if (!isVerified && this.state.networkOnly) {
-            client.error(400, "Only Registered Network players can join!");
+            client.error(400, "Only Registered Network players can join! 您没有注册或登录");
             await this.removePlayer(client);
             return;
+        }
+
+        if (player) {
+            if (!player.qq) {
+                client.error(400, "You must bind a qq account! 您没有绑定QQ号");
+                await this.removePlayer(client);
+            }
         }
 
         if (this.clients.length == 1) {
@@ -1034,7 +1054,7 @@ export class GameRoom extends Room {
         if (!this.state.disableSkins) {
             // this.setPlayerSkin(requester, options.skin);
             // requester.skinURL = options.skinURL;
-            if (!setSkinLimited(this, requester, options.skin)) {
+            if (!setSkinLimited(this, requester, options.skin, this.modLimitLevel)) {
                 this.setPlayerSkin(requester, null);
                 requester.skinURL = null;
             }
@@ -1110,6 +1130,12 @@ export class GameRoom extends Room {
             return;
         }
 
+        // 在线玩家列表去掉这个玩家
+        const room = playerInPubRoom.get(this.roomId)
+        if (room) {
+            room.delete(this.getStatePlayer(client).name);
+        }
+
         // if (this.state.isStarted) {
         //     await this.endSong();
         // }
@@ -1165,6 +1191,10 @@ export class GameRoom extends Room {
     }
 
     async destroy(ing?: boolean) {
+
+        // 清除当前联机玩家列表中的这个房间
+        playerInPubRoom.delete(this.roomId);
+
         for (const client of this.clients) {
             await this.removePlayer(client);
         }
@@ -1284,11 +1314,9 @@ export class GameRoom extends Room {
             return true;
         }
 
-        if (key == 'songspeed' || key == 'mania') {
-            return false;
-        }
+        return !(key == 'songspeed' || key == 'mania');
 
-        return true;
+
     }
 
     async startGame() {
@@ -1318,6 +1346,16 @@ export class GameRoom extends Room {
             player.isReady = false;
         }
 
+        // 若是联机公开房间, 将所有玩家名称放到表中, 后续提交加分从这个表里面找
+        // if (this.clients.length > 1 && !this.state.isPrivate) {
+        if (this.clients.length > 1) {
+            const list: Set<string> = new Set();
+            this.clients.forEach(client => {
+                list.add(this.getStatePlayer(client).name)
+            });
+            playerInPubRoom.set(this.roomId, list);
+        }
+
         await this.lock();
         this.state.isStarted = true;
         this.state.health = 1;
@@ -1329,7 +1367,7 @@ export class GameRoom extends Room {
     // 3. Register the new room ID with the Presence API.
     async generateRoomId(): Promise<string> {
         const currentIds = await this.presence.smembers(this.LOBBY_CHANNEL);
-        let id;
+        let id: string | PromiseLike<string>;
         do {
             id = this.generateRoomIdSingle();
         } while (currentIds.includes(id));

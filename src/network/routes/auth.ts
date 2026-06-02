@@ -13,14 +13,14 @@ export class AuthRoute {
         app.all("/api/auth/register", async (req, res) => {
             try {
                 if (!req.body.email || !(req.body.email as string).includes('@'))
-                    throw { error_message: 'Invalid Email Address!' }
+                    throw { error_message: 'Invalid Email Address! 无效的邮箱地址' }
 
                 if (!validateEmail(req.body.email)) {
                     throw { error_message: 'This Email Host is Blocked!' }
                 }
 
                 if (!isEmailInWhitelist(req.body.email as string)) {
-                    throw { error_message: 'Email is Not in the Whitelist!' }
+                    throw { error_message: 'Email is Not in the Whitelist! 您没有申请白名单' }
                 }
 
                 const player = await getPlayerByEmail(req.body.email);

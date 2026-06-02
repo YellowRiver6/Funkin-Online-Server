@@ -68,16 +68,15 @@ export async function initializeWhitelist(): Promise<void> {
 /**
  * 手动添加邮箱到白名单（可选功能）
  */
-// export async function addEmailToWhitelist(email: string): Promise<void> {
-//     const trimmedEmail = email.trim().toLowerCase();
-//
-//     if (!whitelistSet.has(trimmedEmail)) {
-//         // 添加到内存
-//         whitelistSet.add(trimmedEmail);
-//
-//         // 追加到文件[7](@ref)
-//         const filePath = path.join(__dirname, 'whitelist.txt');
-//         await fs.promises.appendFile(filePath, `\n${trimmedEmail}`);
-//         console.log(`邮箱 ${trimmedEmail} 已添加到白名单`);
-//     }
-// }
+export async function addEmailToWhitelist(email: string): Promise<void> {
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!whitelistSet.has(trimmedEmail)) {
+        // 添加到内存
+        whitelistSet.add(trimmedEmail);
+
+        // 追加到文件[7](@ref)
+        await fs.promises.appendFile("whitelist.txt", `\n${trimmedEmail}`);
+        //console.log(`邮箱 ${trimmedEmail} 已添加到白名单`);
+    }
+}

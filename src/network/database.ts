@@ -8,6 +8,7 @@ import { Data } from "../data";
 import { logAction } from "./mods";
 import { cooldown, cooldownLeft } from "../cooldown";
 import { Request } from "express";
+import {playerInPubRoom} from "../modlimit";
 
 // this class is a mess
 
@@ -161,6 +162,38 @@ export async function submitScore(submitterID: string, replay: ReplayData) {
 
     // if (replay.points > 20 && (!replay.mod_url || !replay.mod_url.startsWith('http')))
     //     throw { error_message: "No Mod URL provided!" }
+
+    // const songName = replay.song.toLowerCase().replaceAll(' ', '-') + '-' + replay.difficulty.toLowerCase();
+    //
+    // let url = findChartUrl(songName, replay.chart_hash);
+    //
+    // let isVanilla = isVanillaChart(songName);
+    //
+    // if (replay.difficulty === "Normal" && !url && !isVanilla) {
+    //     const songName2 = replay.song.toLowerCase().replaceAll(' ', '-');
+    //     url = findChartUrl(songName2, replay.chart_hash);
+    //     isVanilla = isVanillaChart(songName);
+    // }
+    //
+    // if (!url && !isVanilla) {
+    //     throw { error_message: "This song is not allowed" }
+    // }
+
+    let isInPubRoom = false;
+    const p = await getPlayerByID(submitterID);
+    for (const room of playerInPubRoom.values()) {
+        if (room.has(p.name)) {
+            isInPubRoom = true;
+            break;
+        }
+    }
+
+    const s = await getUserStats(submitterID);
+    const s1 = (s.points4k || 0) + (s.points5k || 0) + (s.points6k || 0) + (s.avgAcc7k || 0) + (s.avgAcc8k || 0) + (s.avgAcc9k || 0) + (s.avgAcc9k || 0);
+
+    if (!isInPubRoom && (s1 > 30)) {
+        throw { error_message: "Submitting scores while playing offline or in a private room is not allowed. 本次打歌无效, 请勿单机凹分" }
+    }
 
     const noteEvents = replay.shits + replay.bads + replay.goods + replay.sicks;
     if (noteEvents <= 0 || replay.inputs.length <= 0)
@@ -3053,3 +3086,19 @@ class ScoreData {
     modURL: string;
     player: string; 
 }
+
+// export async function cleanScoreLimited() {
+//     const scores = await prisma.score.findMany();
+//     const deleteScore :string[] = [];
+//     for (const s of scores) {
+//         const v = s.songId.split('-');
+//         const hash = v[v.length - 1];
+//         const url = findChartUrlByHash(hash)
+//         if (!url) {
+//             deleteScore.push(s.id);
+//         } else {
+//             await setScoreModURL(s.id, url)
+//         }
+//     }
+//     await removeScore(deleteScore);
+// }
