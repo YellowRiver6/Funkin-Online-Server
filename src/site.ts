@@ -94,7 +94,7 @@ export async function initExpress(app: Application) {
 
         app.use(cors({ origin: true, credentials: true, }));
         app.use(express.json({
-            limit: '10mb'
+            limit: '3mb'
         }));
         app.use(fileUpload({}));
         app.use(cookieParser());

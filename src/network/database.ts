@@ -2390,6 +2390,12 @@ export async function setUserBanStatus(id: string, to: boolean, reason?: string)
             }
         })
 
+        await prisma.notification.deleteMany({
+            where: {
+                to: id
+            }
+        })
+
         try {
             await removePlayerFromClub(id);
         } catch (_) {}

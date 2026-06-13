@@ -86,7 +86,7 @@ export class GameRoom extends Room {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async onCreate(options: any) {
         this.roomId = await this.generateRoomId();
-        await this.setPrivate();
+        // await this.setPrivate();
         this.autoDispose = true;
 
         if (process.env.DEBUG == "true")
@@ -737,13 +737,16 @@ export class GameRoom extends Room {
                     this.broadcast("log", formatLog("> " + requester.name + " has rolled " + Math.floor(Math.random() * 6 + 1)));
                     break;
                 case "kick":
-                    if (!this.isOwner(client)) {
-                        client.send("log", formatLog("> Just leave the game bro"));
+                    if (!this.isOwner(client) && (await getPlayerByName(requester.name)).role != "Admin") {
+                        client.send("log", formatLog("> You didn't have permission to do that."));
                         return;
                     }
 
                     let kickCount = 0;
                     for (const [clSID, clPerson] of this.state.players) {
+                        if (!message[1]) {
+                            break;
+                        }
                         const usrArr = (message as string[]).slice();
                         usrArr.shift();
                         const username = usrArr.join(' ').toLowerCase();
@@ -816,13 +819,22 @@ export class GameRoom extends Room {
                     break;
                 case "limit":
                     const level = Number(message[1]);
-                    if  ((await getPlayerByName(requester.name)).role != "Admin") {
+                    if ((await getPlayerByName(requester.name)).role != "Admin") {
                         client.send("log", "Admin only.");
+                        break;
                     }
                     if (level || level === 0) {
                         this.modLimitLevel = level;
                         client.send("log", "Mod limit level in this room is " + level + " now.");
                     }
+                    break;
+                case "own":
+                    if ((await getPlayerByName(requester.name)).role != "Admin") {
+                        client.send("log", "Admin only.");
+                        break;
+                    }
+                    this.state.host = client.sessionId;
+                    client.send("log", "You are the room owner now.");
                     break;
                 default:
                     client.send("log", formatLog("> Unknown command; try /help to see the command list!"));
@@ -888,6 +900,15 @@ export class GameRoom extends Room {
                 }
             }
         }, 1000 * 60); //every minute
+
+        this.clock.setInterval(async () => {
+            if (this.clients.length < 1 || !this.metadata.ping) {
+                await this.destroy();
+            }}, 1000 * 10);
+
+        if (options.name.lenth > 14 || !(await getPlayerByName(options.name))) {
+            await this.destroy();
+        }
     }
 
     async endSong() {

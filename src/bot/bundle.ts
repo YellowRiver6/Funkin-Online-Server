@@ -1,7 +1,7 @@
 import {BotContext} from "./command";
 import {getPlayerByName} from "../network/database";
-import {getPlayerByQQ, setQQByName} from "./database";
-import {generateCode, sendCodeMail} from "../network/email";
+import {getPlayerByQQ, getUnbundledUsers, getUnbundleGroupMembers, setQQByName} from "./database";
+import {generateCode, sendBundleCodeMail} from "../network/email";
 
 class PoNameAndQQ {
     poName: string;
@@ -19,41 +19,41 @@ const codeList = new Map<PoNameAndQQ, string>();
 
 export async function bundle(ctx: BotContext, args: string[]): Promise<void> {
     if (args.length != 1) {
-        await ctx.sendGroupReply("绑定命令只需要 /绑定 或 /bd 即可, 无需任何参数");
+        // await ctx.sendGroupReply("绑定命令只需要 /绑定 或 /bd 即可, 无需任何参数");
         return;
     }
     const poName = ctx.poName;
     const user = await getPlayerByName(poName);
     if (!user) {
-        await ctx.sendGroupReply(`没有找到名称为 ${poName} 的PO账号`);
+        // await ctx.sendGroupReply(`没有找到名称为 ${poName} 的PO账号`);
         return;
     }
     if (user.qq && user.qq != ctx.qqId.toString()) {
-        await ctx.sendGroupReply("该PO账号已绑定, 请勿恶意尝试绑定他人账号");
+        // await ctx.sendGroupReply("该PO账号已绑定, 请勿恶意尝试绑定他人账号");
         return;
     }
     const bundled = await getPlayerByQQ(String(ctx.qqId));
     if (bundled && bundled.name == poName) {
-        await ctx.sendGroupReply("您已经绑定过此PO账号");
+        // await ctx.sendGroupReply("您已经绑定过此PO账号");
         return;
     }
     const email = user.email;
     if (!email) {
-        await ctx.sendGroupReply(`PO账号 ${poName} 没有对应的邮箱号`);
+        // await ctx.sendGroupReply(`PO账号 ${poName} 没有对应的邮箱号`);
         return;
     }
     const code = generateCode();
     const p = new PoNameAndQQ(poName, String(ctx.qqId))
     if (codeList.has(p)) {
-        await ctx.sendGroupReply(`请勿重复操作`);
+        // await ctx.sendGroupReply(`请勿重复操作`);
         return;
     }
     codeList.set(p, code);
     codeTimer.set(p, setInterval(()=> {
         codeList.delete(p);
     }, 1000 * 60 * 10));
-    await sendCodeMail(email, code);
-    await ctx.sendGroupReply(`验证码已发送至您PO账号的邮箱中`);
+    await sendBundleCodeMail(email, code);
+    // await ctx.sendGroupReply(`验证码已发送至您PO账号的邮箱中`);
 }
 
 export async function bundleCode(ctx: BotContext, args: string[]): Promise<void> {
@@ -62,7 +62,7 @@ export async function bundleCode(ctx: BotContext, args: string[]): Promise<void>
     }
     const poName = ctx.poName;
     if (!poName) {
-        await ctx.sendGroupReply("您没有按照群公告规定修改群昵称");
+        // await ctx.sendGroupReply("您没有按照群公告规定修改群昵称");
         return;
     }
     let p: PoNameAndQQ = null;
@@ -74,20 +74,20 @@ export async function bundleCode(ctx: BotContext, args: string[]): Promise<void>
         }
     });
     if (!p || !c) {
-        await ctx.sendGroupReply("您没有发出绑定命令");
+        // await ctx.sendGroupReply("您没有发出绑定命令");
         return;
     }
     const code = args[1].toUpperCase();
     if (c == code) {
         const oldBundle = await getPlayerByQQ(String(ctx.qqId));
-        let unBundleMsg = "";
+        // let unBundleMsg = "";
         if (oldBundle && await setQQByName(oldBundle.name, null)) {
-            unBundleMsg = `, 原绑定PO账号 ${oldBundle.name} 已自动解绑`
+            //unBundleMsg = `, 原绑定PO账号 ${oldBundle.name} 已自动解绑`
         }
         await setQQByName(poName, String(ctx.qqId));
-        await ctx.sendGroupReply(`绑定成功${unBundleMsg}`);
+        // await ctx.sendGroupReply(`绑定成功${unBundleMsg}`);
     } else {
-        await ctx.sendGroupReply("验证码错误");
+        // await ctx.sendGroupReply("验证码错误");
     }
     codeList.delete(p);
     codeTimer.delete(p);
@@ -140,4 +140,46 @@ export async function unbundleForce(ctx: BotContext, args: string[]): Promise<vo
     if (await setQQByName(user.name, null)) {
         await ctx.sendGroupReply(`PO账号 ${args[1]} 原绑定QQ号 ${user.qq} 已解绑`)
     }
+}
+
+export async function listUnbundlePoAccount(ctx: BotContext, args: string[]): Promise<void> {
+    if (args.length != 1) {
+        return;
+    }
+    const users = await getUnbundledUsers();
+    let msg = "未绑定的PO账号如下:";
+    users.forEach((user) => {
+        msg += '\n'
+        msg += user.name
+    });
+    msg += ('\n共' + users.length + "个")
+    await ctx.sendGroupReply(msg);
+}
+
+export async function listUnbundleMember(ctx: BotContext, args: string[]): Promise<void> {
+    if (args.length != 1) {
+        return;
+    }
+    const members = await ctx.getMembers();
+    const unbundle = await getUnbundleGroupMembers(members.map(user => user.user_id.toString()));
+    let msg = "未绑定PO账号群成员如下:";
+    unbundle.forEach((qq) => {
+        msg += '\n'
+        msg += qq
+    });
+    msg += ('\n共' + unbundle.length + "个")
+    await ctx.sendGroupReply(msg);
+}
+
+export let kickingFlag = false;
+export async function kickUnbundleMember(ctx: BotContext, args: string[]): Promise<void> {
+    if (args.length != 1) {
+        return;
+    }
+    const members = await ctx.getMembers();
+    const unbundle = await getUnbundleGroupMembers(members.map(user => user.user_id.toString()));
+    kickingFlag = true;
+    await ctx.kickMembers(unbundle.map(i => Number(i)))
+    kickingFlag = false;
+    await ctx.sendGroupReply(`踢出了 ${unbundle.length} 个群成员`);
 }

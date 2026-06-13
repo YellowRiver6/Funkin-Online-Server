@@ -18,22 +18,23 @@ export class UserRoute {
         });
 
         app.get("/api/user/friends/request", checkAccess, async (req, res) => {
-            try {
-                if (!req.query.name)
-                    return res.sendStatus(400);
-
-                const [id] = getIDToken(req);
-
-                const targetId = await getPlayerIDByName(req.query.name as string);
-                if (!targetId)
-                    return res.sendStatus(HttpStatusCode.NotFound);
-
-                await requestFriendRequest(id, targetId);
-                res.sendStatus(200);
-            }
-            catch (exc: any) {
-                res.status(400).send(exc?.error_message ?? "Unknown error...");
-            }
+            // try {
+            //     if (!req.query.name)
+            //         return res.sendStatus(400);
+            //
+            //     const [id] = getIDToken(req);
+            //
+            //     const targetId = await getPlayerIDByName(req.query.name as string);
+            //     if (!targetId)
+            //         return res.sendStatus(HttpStatusCode.NotFound);
+            //
+            //     await requestFriendRequest(id, targetId);
+            //     res.sendStatus(200);
+            // }
+            // catch (exc: any) {
+            //     res.status(400).send(exc?.error_message ?? "Unknown error...");
+            // }
+            res.status(400).send("Not Allowed");
         });
 
         app.get("/api/user/avatar/:user", async (req, res) => {

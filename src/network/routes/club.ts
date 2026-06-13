@@ -90,19 +90,20 @@ export class ClubRoute {
         });
 
         app.post("/api/club/create", checkAccess, async (req, res) => {
-            try {
-                const [id, _] = getIDToken(req);
-                const club = await createClub(id, req.body);
-                res.status(200).send(club.tag);
-            }
-            catch (exc: any) {
-                if (!exc?.error_message)
-                    console.error(exc);
-
-                res.status(400).json({
-                    error: exc.error_message ?? "Couldn't create a club..."
-                });
-            }
+            // try {
+            //     const [id, _] = getIDToken(req);
+            //     const club = await createClub(id, req.body);
+            //     res.status(200).send(club.tag);
+            // }
+            // catch (exc: any) {
+            //     if (!exc?.error_message)
+            //         console.error(exc);
+            //
+            //     res.status(400).json({
+            //         error: exc.error_message ?? "Couldn't create a club..."
+            //     });
+            // }
+            res.status(400).json({error: "Couldn't create a club..."});
         });
 
         app.get("/api/club/join", checkAccess, async (req, res) => {

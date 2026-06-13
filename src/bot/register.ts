@@ -1,20 +1,33 @@
 import {BotContext} from "./command";
 import {deleteUser, getPlayerByEmail, getPlayerByName, playerNameCount, validateEmail} from "../network/database";
-import {addEmailToWhitelist} from "../whitelist";
+import {addWhitelist, clearWhitelist} from "../whitelist";
 import {filterUsername} from "../util";
 import {createUserWithQQ, getPlayerByQQ} from "./database";
 
-
+// /whr <邮箱>
 export async function whiteListAdd(ctx: BotContext, args: string[]): Promise<void> {
     if (args.length != 2) {
         return;
     }
     if (!args[1].includes('@') || !validateEmail(args[1])) {
-         await ctx.sendGroupReply( `邮箱无效`);
+         // await ctx.sendGroupReply( `邮箱无效`);
          return;
     }
-    await addEmailToWhitelist(args[1]);
-    await ctx.sendGroupReply( `成功将邮箱 ${args[1]} 加入白名单`);
+    if (await getPlayerByEmail(args[1])) {
+        // await ctx.sendGroupReply(`邮箱已被注册`);
+        return;
+    }
+    if ((await getPlayerByQQ(ctx.qqId.toString())) || (await getPlayerByName(ctx.poName))) {
+        // await ctx.sendGroupReply(`您无需申请白名单`);
+        return;
+    }
+    addWhitelist(ctx.poName, args[1].toLowerCase(), ctx.qqId.toString());
+    // await ctx.sendGroupReply( `成功将邮箱 ${args[1]} 加入白名单, 并绑定 ${ctx.qqId}`);
+}
+
+export async function whiteListClear(ctx: BotContext, _args: string[]): Promise<void> {
+    clearWhitelist();
+    await ctx.sendGroupReply(`已清空白名单`);
 }
 
 // /reg <游戏名> <邮箱号> <qq号>
@@ -50,7 +63,9 @@ export async function register(ctx: BotContext, args: string[]): Promise<void> {
         await ctx.sendGroupReply(`该QQ号已被绑定`);
         return;
     }
-    await createUserWithQQ(args[1], args[2], args[3]);
+    try {
+        await createUserWithQQ(args[1], args[2], args[3])
+    } catch (_) { return }
     await ctx.sendGroupReply("注册成功");
 }
 

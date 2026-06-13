@@ -1,8 +1,9 @@
-import { Application, Express } from 'express';
-import { validateEmail, getPlayerByEmail, createUser, genAccessToken, getPlayerNameByID } from '../database';
-import { emailCodes, generateCode, sendCodeMail, tempSetCode } from '../email';
-import { cooldownReq, CooldownTime, setCooldown } from '../../cooldown';
-import { isEmailInWhitelist } from "../../whitelist";
+import {Application} from 'express';
+import {genAccessToken, getPlayerByEmail, getPlayerNameByID, validateEmail} from '../database';
+import {emailCodes, generateCode, sendCodeMail, tempSetCode} from '../email';
+import {cooldownReq, CooldownTime, setCooldown} from '../../cooldown';
+import {verifyRegisterWithQQ} from "../../whitelist";
+import {createUserWithQQ, verifyRegister} from "../../bot/database";
 
 export class AuthRoute {
     static init(app: Application) {
@@ -19,9 +20,8 @@ export class AuthRoute {
                     throw { error_message: 'This Email Host is Blocked!' }
                 }
 
-                if (!isEmailInWhitelist(req.body.email as string)) {
-                    throw { error_message: 'Email is Not in the Whitelist! 您没有申请白名单' }
-                }
+                await verifyRegister(req.body.username, req.body.email);
+                const qq_id = verifyRegisterWithQQ(req.body.username, req.body.email)
 
                 const player = await getPlayerByEmail(req.body.email);
 
@@ -37,7 +37,7 @@ export class AuthRoute {
                         return res.sendStatus(429);
                     }
 
-                    const user = await createUser(req.body.username, req.body.email);
+                    const user = await createUserWithQQ(req.body.username, req.body.email, qq_id);
                     res.json({
                         id: user.id,
                         token: await genAccessToken(user.id),
@@ -49,7 +49,8 @@ export class AuthRoute {
                     if (player) {
                         // to avoid users abusing the email system
                         // we always send an "successful" response (even when it's not)
-                        return; // throw { error_message: 'Player with that email does exist!' }
+                        throw { error_message: 'Player with that email does exist! 你已经注册过了, 去下面登录即可' }
+                        // return; // throw { error_message: 'Player with that email does exist!' }
                     }
 
                     const daCode = generateCode();
@@ -90,7 +91,8 @@ export class AuthRoute {
                     if (!player) {
                         // to avoid users abusing the email system
                         // we always send an "successful" response (even when it's not)
-                        return; // throw { error_message: 'Player with that email doesn\'t exist!' }
+                        //return; // throw { error_message: 'Player with that email doesn\'t exist!' }
+                        throw { error_message: 'Player with that email doesn\'t exist! 您未注册, 请申请白名单后注册' }
                     }
 
                     const daCode = generateCode();

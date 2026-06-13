@@ -7,7 +7,6 @@ import { Data } from "./data";
 import ip from 'ip';
 import { saveAndCleanCooldownData, setCooldown } from "./cooldown";
 import { Encoder } from "@colyseus/schema";
-import { initializeWhitelist } from "./whitelist";
 import { reloadCache } from "./modlimit";
 import {initNapCatBot} from "./bot";
 
@@ -42,10 +41,6 @@ export class ServerInstance {
 
             if (process.env["DATABASE_URL"]) {
                 await initDatabaseCache();
-            }
-
-            if (process.env["WHITE_LIST"]) {
-                await initializeWhitelist()
             }
 
             process.on('SIGTERM', function () {

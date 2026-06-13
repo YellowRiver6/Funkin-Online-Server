@@ -39,6 +39,28 @@ export async function sendCodeMail(email: string, code: string) {
     }
 }
 
+export async function sendBundleCodeMail(email: string, code: string) {
+    try {
+        await transMail.sendMail({
+                from: "psych-online@qq.com",
+                to: email,
+                subject: code + ' 是您的验证码',
+                html: '<h3>您的绑定验证码是:<h3><h1>' + code + '</h1>' + '<h3>请在联机群中使用 /bdc ' + code + ' 命令完成绑定</h3>',
+            }
+            // ,    (error, info) => {
+            //         if (res)
+            //             if (error)
+            //                 res.sendStatus(500);
+            //             else
+            //                 res.sendStatus(200);
+            //     }
+        );
+    }
+    catch (exc) {
+        console.error(exc);
+    }
+}
+
 export function tempSetCode(email: string, code: string) {
     if (emailCodeTimers.has(email)) {
         clearInterval(emailCodeTimers.get(email));
