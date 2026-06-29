@@ -12,10 +12,9 @@ import {
 } from "./bundle";
 import {comparePermission, extraPoName} from "./utils";
 import {deleteUser, getPlayerByName} from "../network/database";
-// import {help} from "./help";
-// import {info} from "./info";
 import {deregister, register, whiteListAdd, whiteListClear} from "./register";
 import {status} from "./status";
+import {info} from "./info";
 
 export class BotContext {
     bot: NCWebsocket = null;
@@ -58,7 +57,7 @@ const groupAdminId = Number.parseInt(process.env.QQ_GROUP_ADMIN_ID);
 export function registerCommands(bot: Robot) {
     bot.command("bd", "绑定", "Unknown", bundle);
     bot.command("bdc", "绑定验证", "Unknown", bundleCode);
-    // bot.command("info", "个人信息", "Member", info);
+    bot.command("info", "个人信息", "Admin", info);
     // bot.command("help", "帮助", "Member", help);
     bot.command("status", "服务器状态", "Admin", status)
     bot.command("bdf", "强制绑定", "Admin", bundleForce);
@@ -148,6 +147,9 @@ export class Robot {
 
             // 开始匹配命令
             const command: Command = this.commands.get(args[0]);
+            if (!command) {
+                return;
+            }
             const permissionIsOk = comparePermission(ctx.poRole, command.permission);
             if (!permissionIsOk && args[0] != "whr") {
                 if (ctx.poRole === "Unknown") {

@@ -8,7 +8,7 @@ import { Data } from "../data";
 import { logAction } from "./mods";
 import { cooldown, cooldownLeft } from "../cooldown";
 import { Request } from "express";
-import {playerInPubRoom} from "../modlimit";
+import {findChartUrl, findChartUrlByHash, isVanillaChart, playerInPubRoom} from "../modlimit";
 
 // this class is a mess
 
@@ -163,21 +163,21 @@ export async function submitScore(submitterID: string, replay: ReplayData) {
     // if (replay.points > 20 && (!replay.mod_url || !replay.mod_url.startsWith('http')))
     //     throw { error_message: "No Mod URL provided!" }
 
-    // const songName = replay.song.toLowerCase().replaceAll(' ', '-') + '-' + replay.difficulty.toLowerCase();
-    //
-    // let url = findChartUrl(songName, replay.chart_hash);
-    //
-    // let isVanilla = isVanillaChart(songName);
-    //
-    // if (replay.difficulty === "Normal" && !url && !isVanilla) {
-    //     const songName2 = replay.song.toLowerCase().replaceAll(' ', '-');
-    //     url = findChartUrl(songName2, replay.chart_hash);
-    //     isVanilla = isVanillaChart(songName);
-    // }
-    //
-    // if (!url && !isVanilla) {
-    //     throw { error_message: "This song is not allowed" }
-    // }
+    const songName = replay.song.toLowerCase().replaceAll(' ', '-') + '-' + replay.difficulty.toLowerCase();
+
+    let url = findChartUrlByHash(replay.chart_hash);
+
+    let isVanilla = isVanillaChart(songName);
+
+    if (replay.difficulty === "Normal" && !url && !isVanilla) {
+        const songName2 = replay.song.toLowerCase().replaceAll(' ', '-');
+        url = findChartUrl(songName2, replay.chart_hash);
+        isVanilla = isVanillaChart(songName);
+    }
+
+    if (!url && !isVanilla) {
+        throw { error_message: "This song is not allowed. 本次打歌不加分" }
+    }
 
     let isInPubRoom = false;
     const p = await getPlayerByID(submitterID);

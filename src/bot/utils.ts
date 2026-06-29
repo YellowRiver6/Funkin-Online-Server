@@ -36,3 +36,14 @@ export function comparePermission(now: string, need: string): boolean {
     if (now === "Banned") return false;
     return false;
 }
+
+// 生成随机毫秒数
+function getRandomMs(min: number = 2000, max: number = 5000): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+// 随机休眠
+export async function sleepRandom(min?: number, max?: number): Promise<void> {
+    const ms = getRandomMs(min, max);
+    return new Promise(resolve => setTimeout(resolve, ms));
+}

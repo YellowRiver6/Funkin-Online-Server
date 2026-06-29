@@ -28,7 +28,7 @@ export class ServerInstance {
             await saveAndCleanCooldownData();
         }, 1000 * 30);
 
-        Encoder.BUFFER_SIZE = 32 * 1024;
+        Encoder.BUFFER_SIZE = 8 * 1024 * 1024;
 
         try {
             if (process.env["DISCORD_TOKEN"]) {

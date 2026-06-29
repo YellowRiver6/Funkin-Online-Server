@@ -9,6 +9,7 @@
     },
     "scripts": {
         "compile": "bun build src/index.ts --compile --outfile funkin --minify --sourcemap",
+        "esbuild": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js --target=node24 --minify --packages=external",
         "test": "nodemon src/index.ts",
         "start": "npm run build && pm2 start ecosystem.config.js",
         "startnode": "npm run build && node build/index.js",
@@ -57,7 +58,6 @@
         "@types/nodemailer": "^6.4.23",
         "axios": "^1.16.1",
         "body-parser": "github:Snirozu/body-parser",
-        "bun-serve-express": "^2.0.2",
         "chart.js": "^4.5.1",
         "colyseus": "^0.17.10",
         "cookie-parser": "^1.4.7",

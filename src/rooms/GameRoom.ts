@@ -8,6 +8,7 @@ import { filterChatMessage, filterUsername, formatLog, getRequestIP, removeFromA
 import { Data } from "../data";
 import { cooldown, cooldownLeft } from "../cooldown";
 import {playerInPubRoom, setSkinLimited, setSongLimited} from "../modlimit";
+import {hash} from 'node:crypto';
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -82,6 +83,9 @@ export class GameRoom extends Room {
 
     // mod限制等级
     modLimitLevel: number = Number.parseInt(process.env.MOD_LIMIT_LEVEL) || 1;
+
+    // 禁言
+    clientsMuted: Set<string> = new Set();
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     async onCreate(options: any) {
@@ -437,6 +441,11 @@ export class GameRoom extends Room {
         this.onMessage("chat", (client, message) => {
             this.keepAliveClient(client);
 
+            if (this.clientsMuted.has(this.getStatePerson(client).name.toLowerCase())) {
+                client.send("alert", "You has been muted! 你已被禁言!");
+                return;
+            }
+
             if (this.checkInvalid(message, VerifyTypes.STRING)) return; // Fix crash issue from a null value.
 
             message = filterChatMessage(message);
@@ -615,8 +624,15 @@ export class GameRoom extends Room {
             if (!this.getStatePlayer(client))
                 return;
 
+            if (this.isOwner(client)) {
+                await this.endSong();
+            } else {
+                this.broadcast("log", this.getStatePlayer(client).name + " wants to end the song! (主动退出了游戏)");
+                await this.removePlayer(client);
+            }
+
             //if (this.hasPerms(client)) {
-            await this.endSong();
+            // await this.endSong();
             // }
             // else {
             //   this.broadcast("log", this.getStatePlayer(client).name + " wants to end the song! (ESC)");
@@ -836,6 +852,23 @@ export class GameRoom extends Room {
                     this.state.host = client.sessionId;
                     client.send("log", "You are the room owner now.");
                     break;
+                case "mute":
+                    if (!this.isOwner(client) && (await getPlayerByName(requester.name)).role != "Admin") {
+                        client.send("log", formatLog("> You didn't have permission to do that."));
+                        return;
+                    }
+                    const usrArr = (message as string[]).slice();
+                    usrArr.shift();
+                    const username = usrArr.join(' ').toLowerCase();
+                    if (!this.clientsMuted.has(username)) {
+                        this.clientsMuted.add(username);
+                        this.broadcast("log", "Player \"" + username + "\" has been muted." + "玩家被禁言");
+                    } else {
+                        this.clientsMuted.delete(username);
+                        this.broadcast("log", "Player \"" + username + "\" has been unmuted." + "玩家被解除禁言");
+                    }
+
+                    break;
                 default:
                     client.send("log", formatLog("> Unknown command; try /help to see the command list!"));
                     break;
@@ -907,7 +940,7 @@ export class GameRoom extends Room {
             }}, 1000 * 10);
 
         if (options.name.lenth > 14 || !(await getPlayerByName(options.name))) {
-            await this.destroy();
+            throw new Error("Create Failed! ");
         }
     }
 
@@ -943,7 +976,7 @@ export class GameRoom extends Room {
             throw new ServerError(5002, "Can't join/create 4 servers on the same IP!");
         }
 
-        // const playerIp = getRequestIP(context);
+        const playerIp = getRequestIP(context);
         // try {
         //     const ipInfo = await (await fetch("http://ip-api.com/json/" + encodeURIComponent(playerIp))).json();
         //     if (process.env["NETWORK_ENABLED"] == "true" && ipInfo.country) {
@@ -960,7 +993,7 @@ export class GameRoom extends Room {
         // }
 
         this.clientsInfo.set(client.sessionId, new ClientInfo());
-        // this.clientsInfo.get(client.sessionId).ip = playerIp;
+        this.clientsInfo.get(client.sessionId).ip = playerIp;
 
         return true;
     }
@@ -1153,8 +1186,9 @@ export class GameRoom extends Room {
 
         // 在线玩家列表去掉这个玩家
         const room = playerInPubRoom.get(this.roomId)
-        if (room) {
-            room.delete(this.getStatePlayer(client).name);
+        const p = this.getStatePlayer(client);
+        if (room && p) {
+            room.delete(p.name);
         }
 
         // if (this.state.isStarted) {
@@ -1190,12 +1224,16 @@ export class GameRoom extends Room {
         else if (this.isOwner(client))
             for (const [sid, _] of this.state.players) {
                 this.state.host = sid;
+                const newOwner = this.getStatePerson(this.clients.getById(sid))
+                if (newOwner) {
+                    await this.setMetadata({name: newOwner.name});
+                }
                 break;
             }
 
-        // if (this.clients.length < this.maxClients) {
-        //     this.unlock();
-        // }
+        if (this.clients.length < this.maxClients && !this.state.isStarted) {
+            await this.unlock();
+        }
     }
 
     async onDispose() {

@@ -36,8 +36,7 @@ export async function initExpress(app: Application) {
         res.send(getSkinList())
     })
 
-    // app.get("/rooms/:roomName?", async (_req, res) => {
-    app.get("/rooms/:roomName", async (_req, res) => {
+    app.get("/rooms/:roomName?", async (_req, res) => {
         const rooms = await matchMaker.query({
             name: 'room',
             locked: false,
@@ -217,8 +216,7 @@ export async function initExpress(app: Application) {
 
     app.get('/', showIndex);
     app.use(express.static('client/build/'));
-    // app.get('/*', showIndex);
-    app.use(showIndex);
+    app.get('/*', showIndex);
 }
 
 export const moneyFormatter = new Intl.NumberFormat();
